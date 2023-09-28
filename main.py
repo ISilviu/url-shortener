@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 import random
 import string
@@ -6,7 +7,7 @@ import string
 
 app = FastAPI()
 random.seed(10)
-shortened_urls = {}
+url_codes = {}
 
 
 class Url(BaseModel):
@@ -17,17 +18,25 @@ def generate_random_url():
     return random.choice(string.ascii_lowercase)
 
 
-def generate_url():
+def generate_random_letters():
     random_letters = ''.join(random.choices(string.ascii_lowercase, k=6))
-    shortened_url = f'http://localhost:/8000/{random_letters}'
-    return shortened_url
+    return random_letters
 
 
 @app.post("/")
 def shorten_url(url: Url):
-    shortened_url = generate_url()
-    while shortened_url in shortened_urls:
-        shortened_url = generate_url()
+    random_letters = generate_random_letters()
+    while random_letters in url_codes:
+        random_letters = generate_random_letters()
 
-    shortened_urls[shortened_url] = url
+    url_codes[random_letters] = url
+    shortened_url = f'http://localhost:8000/{random_letters}'
     return shortened_url
+
+
+@app.get("/{route_code}")
+def re_route(route_code):
+    original_url = url_codes.get(route_code)
+    if original_url:
+        print(original_url)
+        return RedirectResponse(url=original_url.url)
